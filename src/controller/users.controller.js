@@ -430,6 +430,9 @@ const sendInviteEmail = async (req, res) => {
         const userEmailClean = email.toLowerCase().trim();
         const pName = projectName || "Project Workspace";
 
+        let emailDelivered = false;
+        let emailDeliveryError = null;
+
         try {
             await sendEmail({
                 to: userEmailClean,
@@ -457,7 +460,9 @@ const sendInviteEmail = async (req, res) => {
                     </div>
                 `
             });
+            emailDelivered = true;
         } catch (emailErr) {
+            emailDeliveryError = emailErr.message;
             console.error("Nodemailer Email Error:", emailErr.message);
         }
 
@@ -467,9 +472,17 @@ const sendInviteEmail = async (req, res) => {
             details: {
                 email: userEmailClean,
                 projectName: pName,
+                emailDelivered,
                 description: `Generated project invitation for ${userEmailClean} (${pName})`
             }
         });
+
+        if (!emailDelivered) {
+            return res.status(500).json({
+                success: false,
+                message: `Failed to deliver email: ${emailDeliveryError || 'SMTP Error'}`
+            });
+        }
 
         res.status(200).json({
             success: true,
