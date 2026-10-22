@@ -1,11 +1,13 @@
+const dns = require("dns");
+try {
+    dns.setDefaultResultOrder("ipv4first");
+} catch (e) {}
+
 const nodemailer = require("nodemailer");
 
 const sendEmail = async ({ to, subject, html, text }) => {
     try {
-        const isGmail = (process.env.SMTP_HOST || "").toLowerCase().includes("gmail") || 
-                        (process.env.SMTP_USER || "").toLowerCase().includes("gmail");
-
-        const port = isGmail ? 465 : (parseInt(process.env.SMTP_PORT) || 465);
+        const port = parseInt(process.env.SMTP_PORT) || 587;
         const isSecure = port === 465;
 
         const transporter = nodemailer.createTransport({
@@ -17,9 +19,12 @@ const sendEmail = async ({ to, subject, html, text }) => {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
             },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000
+            tls: {
+                rejectUnauthorized: false
+            },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 20000
         });
 
         const mailOptions = {
